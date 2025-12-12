@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ba Na Hills Golf Club Guide</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* Custom scrollbar hiding */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #020617; /* slate-950 */
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- Icons (Replaced lucide-react with inline SVGs for standalone HTML) ---
+        const IconBase = ({ size = 24, className = "", children }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const ChevronLeft = (props) => <IconBase {...props}><path d="m15 18-6-6 6-6"/></IconBase>;
+        const ChevronRight = (props) => <IconBase {...props}><path d="m9 18 6-6-6-6"/></IconBase>;
+        const MapIcon = (props) => <IconBase {...props}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></IconBase>;
+        const BookOpen = (props) => <IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>;
+        const Trophy = (props) => <IconBase {...props}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></IconBase>;
+        const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
+        const Plus = (props) => <IconBase {...props}><path d="M5 12h14"/><path d="M12 5v14"/></IconBase>;
+        const Minus = (props) => <IconBase {...props}><path d="M5 12h14"/></IconBase>;
+        const XIcon = (props) => <IconBase {...props}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></IconBase>;
+
+        // --- Data Source ---
+        const HOLE_DATA = [
+            { 
+                id: 1, 
+                title: "The Opening Spirit", 
+                par: 4, 
+                hcp: 10, 
+                distance: 397, 
+                depth: 35,
+                imageUrl: "https://i.ibb.co/fzfxjC4f/Bana-1.jpg", 
+                strategy: "第一洞展現了這座球場的精神：開闊與挑戰並存。發球台居高臨下，第一桿的落點相當寬敞，是一個熱身的好機會。\n\n攻略：\n建議瞄準球道中央偏左的位置，避開右側的沙坑。進攻果嶺時需注意，果嶺後方有保護區，寧可打短也不要打大。這是一個建立信心的開場洞。"
+            },
+            { 
+                id: 2, 
+                title: "The Gentle Challenge", 
+                par: 3, 
+                hcp: 8, 
+                distance: 210, 
+                depth: 51,
+                imageUrl: "https://i.ibb.co/1GJffxBR/Bana-2.jpg", 
+                strategy: "這是一個距離適中但充滿視覺壓力的 Par 3。果嶺深度達 51 碼，這意味著選桿非常關鍵。\n\n攻略：\n果嶺前方有沙坑守護，建議選擇大一號的球桿，瞄準果嶺中央。風向通常是從山谷吹來，擊球時務必將風勢考慮進去。"
+            },
+            { 
+                id: 3, 
+                title: "The Art of Strategic Control",
+                par: 4, 
+                hcp: 18, 
+                distance: 356, 
+                depth: 42,
+                imageUrl: "https://i.ibb.co/1f59S6pg/Bana-3.jpg",
+                strategy: "這是一個考驗策略的短 Par 4。雖然距離不長，但球道佈滿了沙坑陷阱。\n\n攻略：\n不需要使用一號木桿強攻。建議使用球道木或長鐵桿，將球放在球道寬闊處，避開左右兩側的沙坑。第二桿進攻果嶺時，精準度是抓下 Birdie 的關鍵。"
+            },
+            { 
+                id: 4, 
+                title: "The Fairway Illusion", 
+                par: 5, 
+                hcp: 14, 
+                distance: 463, 
+                depth: 33,
+                imageUrl: "https://i.ibb.co/QFCtFhpr/Bana-4.jpg",
+                strategy: "這是一個視覺上會欺騙你的 Par 5。從發球台看去，球道似乎很窄，但實際落球區比看起來寬敞。\n\n攻略：\n這是一個有機會兩桿上果嶺的洞。開球若能避開球道沙坑，第二桿可以使用長桿直攻果嶺。若選擇 Lay-up (過渡一桿)，請注意果嶺前的障礙區。"
+            },
+            { 
+                id: 5, 
+                title: "The Asia's Longest", 
+                par: 5, 
+                hcp: 2, 
+                distance: 578, 
+                depth: 38,
+                imageUrl: "https://i.ibb.co/Wv3mh69B/Bana-5.jpg",
+                strategy: "第五洞是本球場的標誌性名洞，也是亞洲最長的 Par 5 之一。黑梯長度超過 700 碼！\n\n攻略：\n這是一場耐力賽。不要想著兩桿上果嶺。保持耐心，分三桿穩穩推進。球道沿途有水障礙與沙坑，每一桿都需要精準的落點控制。保 Par 是這裡非常好的成績。"
+            },
+            { 
+                id: 6, 
+                title: "The Hidden Patience", 
+                par: 4, 
+                hcp: 4, 
+                distance: 419, 
+                depth: 47,
+                imageUrl: "https://i.ibb.co/7NY63xR7/Bana-6.jpg",
+                strategy: "這是一個高難度的 Par 4。發球台看不到果嶺，需要極大的耐心。\n\n攻略：\n盲眼開球是最大的挑戰。建議瞄準球道中央指示樹的方向。第二桿進攻果嶺時，要注意果嶺左側的斜坡，球很容易滾出界外。建議稍微偏右進攻。"
+            },
+            { 
+                id: 7, 
+                title: "The Mountain's Whisper", 
+                par: 4, 
+                hcp: 16, 
+                distance: 395, 
+                depth: 39,
+                imageUrl: "https://i.ibb.co/XxmdKmvY/Bana-7.jpg",
+                strategy: "這是一個風景優美的 Par 4，背景是壯麗的巴拿山。\n\n攻略：\n開球時風向多變，通常是側逆風。球道右側有水障礙，左側相對安全。建議瞄準球道左側，利用地形讓球滾回中央。果嶺速度通常較快，推桿需謹慎。"
+            },
+            { 
+                id: 8, 
+                title: "The Pin Seeker", 
+                par: 3, 
+                hcp: 6, 
+                distance: 174, 
+                depth: 34,
+                imageUrl: "https://i.ibb.co/JwKMTVpF/Bana-8.jpg",
+                strategy: "這是一個下坡的 Par 3，也是抓鳥的好機會。\n\n攻略：\n雖然是下坡，但風勢往往會將球吹短。建議不要減桿太多。果嶺周圍有數個深沙坑，精準的鐵桿擊球是必須的。瞄準旗桿，大膽進攻吧！"
+            },
+            { 
+                id: 9, 
+                title: "The Strategist's Dream", 
+                par: 4, 
+                hcp: 12, 
+                distance: 375, 
+                depth: 37,
+                imageUrl: "https://i.ibb.co/BVbptq2m/Bana-9.jpg",
+                strategy: "前九洞的結束洞是一個右狗腿 Par 4。\n\n攻略：\n開球落點非常重要。長打者可以嘗試切過右側的樹林，縮短距離。保守打法則是瞄準球道轉折處，給自己留下一個約 150 碼的第二桿距離。果嶺被沙坑重重包圍，進攻需格外小心。"
+            },
+            { 
+                id: 10, 
+                title: "The Turning Point", 
+                par: 4, 
+                hcp: 11, 
+                distance: 285, 
+                depth: 34,
+                imageUrl: "https://i.ibb.co/Z6DwjPbH/Bana-10.jpg",
+                strategy: "後九洞的開始，這是一個距離較短的 Par 4，也是得分的轉折點。\n\n攻略：\n長打者有機會一桿攻上果嶺！但風險極高，因為果嶺前方有水障礙。穩健的打法是用鐵桿開球，留下一個短切桿距離，穩穩抓下 Birdie。"
+            },
+            { 
+                id: 11, 
+                title: "The Green Mirage", 
+                par: 5, 
+                hcp: 7, 
+                distance: 513, 
+                depth: 41,
+                imageUrl: "https://i.ibb.co/B5RV3SdS/Bana-11.jpg",
+                strategy: "這是一個上坡的 Par 5，果嶺看起來比實際距離還要近，就像海市蜃樓。\n\n攻略：\n上坡地形會吃掉擊球距離，務必多加一桿。開球瞄準球道左側，避開右側深草區。第三桿攻果嶺時，要注意果嶺是雙層設計，務必確認旗桿位置，否則容易出現三推。"
+            },
+            { 
+                id: 12, 
+                title: "The Valley of Calm", 
+                par: 3, 
+                hcp: 13, 
+                distance: 170, 
+                depth: 36,
+                imageUrl: "https://i.ibb.co/ytjLhS0/Bana-12.jpg",
+                strategy: "位於寧靜山谷中的 Par 3，周圍被森林環繞。\n\n攻略：\n這是一個視覺上非常狹窄的洞。雖然距離不長，但心理壓力很大。建議忽略周圍的樹林，專注於揮桿節奏。果嶺後方稍微傾斜，打大一點通常比打短安全。"
+            },
+            { 
+                id: 13, 
+                title: "The Bold Horizon", 
+                par: 4, 
+                hcp: 17, 
+                distance: 352, 
+                depth: 38,
+                imageUrl: "https://i.ibb.co/4g8JnxCK/Bana-13.jpg",
+                strategy: "這是一個考驗膽量的 Par 4。發球台前方是一片斷崖。\n\n攻略：\n必須克服視覺恐懼，大膽將球擊過峽谷。一旦越過障礙，球道其實相當寬敞。第二桿是上坡，記得多選一號球桿。果嶺隱藏在沙坑後方，盲眼進攻需要對距離有十足把握。"
+            },
+            { 
+                id: 14, 
+                title: "The Silent Protector", 
+                par: 5, 
+                hcp: 3, 
+                distance: 519, 
+                depth: 53,
+                imageUrl: "https://i.ibb.co/nssNqTPs/Bana-14.jpg",
+                strategy: "這是一個充滿戰略性的 Par 5。球道中央有一棵大樹，像是沉默的守護者。\n\n攻略：\n開球必須決定從大樹的左側還是右側進攻。左側路徑較短但較窄；右側寬敞但距離較遠。建議根據當天的風向決定。第二桿若無法上果嶺，請選擇安全的落點 lay-up，避開果嶺前的溪流。"
+            },
+            { 
+                id: 15, 
+                title: "The Elevated Dream", 
+                par: 4, 
+                hcp: 1, 
+                distance: 421, 
+                depth: 36,
+                imageUrl: "https://i.ibb.co/99c0HDXD/Bana-15.jpg",
+                strategy: "這是全場難度係數 (HCP) 1 的最難一洞。\n\n攻略：\n距離長且持續上坡。開球必須又遠又直，任何失誤都會受到懲罰。第二桿進攻果嶺通常需要長鐵桿或混血桿。果嶺被墊高，若擊球不足會滾回坡下。保 Par 是這裡的最高榮耀。"
+            },
+            { 
+                id: 16, 
+                title: "The Island Green", 
+                par: 3, 
+                hcp: 5, 
+                distance: 182, 
+                depth: 40,
+                imageUrl: "https://i.ibb.co/N2WX92z4/Bana-16.jpg",
+                strategy: "著名的「島嶼果嶺」Par 3，是巴拿山最上鏡的一洞。\n\n攻略：\n果嶺四面環水，沒有任何退路。風向在這裡起著決定性作用。建議瞄準果嶺中央，不要貪攻旗桿位置。如果風大，甚至可以考慮打低飛球抗風。成功上果嶺將是美好一天的回憶。"
+            },
+            { 
+                id: 17, 
+                title: "The Final Test of Nerve", 
+                par: 4, 
+                hcp: 9, 
+                distance: 404, 
+                depth: 38,
+                imageUrl: "https://i.ibb.co/fVQ9VKQg/Bana-17.jpg",
+                strategy: "這是一個極具考驗的長 Par 4，通常逆風。\n\n攻略：\n開球必須避開右側的水障礙和左側的深沙坑。球道比看起來還要窄。第二桿進攻果嶺時，要注意果嶺前方的假前緣 (False Front)，球若落在這裡會倒滾下水。建議多打一點距離到果嶺後方。"
+            },
+            { 
+                id: 18, 
+                title: "The Final Push", 
+                par: 4, 
+                hcp: 15, 
+                distance: 403, 
+                depth: 41,
+                imageUrl: "https://i.ibb.co/G4BFy2kY/Bana-18.jpg",
+                strategy: "最後一洞是一個壯觀的結束。俱樂部會館就在果嶺後方，彷彿在迎接英雄歸來。\n\n攻略：\n這是一個上坡的 Par 4，且通常有觀眾在會館看著你。開球瞄準會館方向。第二桿因為上坡加上果嶺抬升，需要多加 1-2 桿。果嶺起伏很大，推桿路線判斷是最後的挑戰。享受這一洞的風景吧！"
+            },
+        ];
+
+        const HoleDetail = ({ hole, viewMode, setViewMode, score, setScore }) => {
+            return (
+                <div className="bg-white md:rounded-2xl rounded-xl shadow-xl overflow-hidden border border-gray-100 flex flex-col h-full relative">
+                
+                {/* 1. Header Info */}
+                <div className="bg-slate-900 text-white p-3 md:p-4 pb-4 md:pb-6 shadow-md z-10 shrink-0">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl md:text-4xl font-black text-amber-400">{hole.id}</span>
+                                <span className="text-xs md:text-sm font-medium text-slate-300 uppercase tracking-wider">Hole</span>
+                            </div>
+                            <h2 className="text-base md:text-lg font-bold mt-1 leading-tight text-white/90 line-clamp-1">{hole.title}</h2>
+                        </div>
+                        
+                        <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm font-semibold bg-slate-800 px-2 md:px-3 py-1 rounded-full border border-slate-700">
+                                <span className={`text-emerald-400 ${hole.par === 3 ? 'text-blue-300' : hole.par === 5 ? 'text-amber-300' : ''}`}>Par {hole.par}</span>
+                                <span className="w-px h-3 bg-slate-600"></span>
+                                <span className="text-slate-300">HCP {hole.hcp}</span>
+                            </div>
+                            <div className="flex items-center gap-1 mt-1">
+                                <span className="text-xl md:text-2xl font-bold">{hole.distance}</span>
+                                <span className="text-xs text-slate-400">Yards</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Content Area */}
+                <div className="flex-1 relative bg-gray-50 overflow-hidden flex flex-col">
+                    
+                    <div className="flex-1 overflow-y-auto relative bg-slate-900 scrollbar-hide">
+                        {viewMode === 'map' ? (
+                            <div 
+                                className="w-full h-full flex items-center justify-center p-0 cursor-pointer"
+                                onClick={() => setViewMode('strategy')}
+                                title="點擊查看攻略"
+                            >
+                                <img 
+                                    src={hole.imageUrl} 
+                                    alt={`Hole ${hole.id} Map`} 
+                                    className="w-full h-full object-contain"
+                                    onError={(e) => {
+                                        e.target.onerror = null; 
+                                        e.target.src = "https://via.placeholder.com/400x600?text=Map+Coming+Soon";
+                                    }}
+                                />
+                                <div className="absolute bottom-4 left-4 bg-black/50 text-white px-3 py-1.5 rounded-lg text-xs backdrop-blur-sm border border-white/10 shadow-sm pointer-events-none">
+                                    <span className="text-blue-200 font-bold">Blue Tee:</span> {hole.distance}y
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="p-4 md:p-6 pb-6 bg-white min-h-full">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-emerald-800 font-bold text-lg flex items-center gap-2">
+                                        <BookOpen size={20} className="text-emerald-600"/>
+                                        擊球攻略
+                                    </h3>
+                                    <button 
+                                        onClick={() => setViewMode('map')}
+                                        className="p-1.5 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"
+                                    >
+                                        <XIcon size={16} />
+                                    </button>
+                                </div>
+
+                                <div className="prose prose-sm prose-slate text-gray-700 leading-relaxed whitespace-pre-line mb-6">
+                                    {hole.strategy}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-100 text-center">
+                                        <span className="block text-xs text-slate-500 font-bold uppercase mb-1">Blue Tee</span>
+                                        <span className="text-xl md:text-2xl font-black text-slate-800">{hole.distance}</span>
+                                    </div>
+                                    <div className="bg-emerald-50 p-3 md:p-4 rounded-xl border border-emerald-100 text-center">
+                                        <span className="block text-xs text-emerald-600 font-bold uppercase mb-1">Green Depth</span>
+                                        <span className="text-xl md:text-2xl font-black text-emerald-900">{hole.depth > 0 ? hole.depth : '-'}<span className="text-sm align-top ml-1 font-normal text-emerald-700">{hole.depth > 0 ? 'y' : ''}</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 3. Control Bar (Moved from floating buttons to static footer) */}
+                    <div className="bg-white border-t border-gray-200 p-3 flex items-center justify-between z-20 shrink-0 safe-area-bottom-inner">
+                        {/* Score Counter */}
+                        <div className="flex items-center gap-3">
+                            <div className="bg-slate-100 text-slate-500 w-10 h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-bold leading-none">
+                                <span>PAR</span>
+                                <span className="text-base text-slate-800">{hole.par}</span>
+                            </div>
+                            <div className="flex items-center gap-2 bg-slate-50 rounded-lg p-1 border border-slate-100">
+                                <button 
+                                    onClick={() => setScore(Math.max(1, score - 1))}
+                                    className="w-8 h-8 rounded-md bg-white hover:bg-slate-100 shadow-sm border border-slate-200 flex items-center justify-center text-slate-600 transition-colors"
+                                >
+                                    <Minus size={16} />
+                                </button>
+                                <span className={`w-6 text-center text-xl font-black ${score < hole.par ? 'text-red-500' : score > hole.par ? 'text-blue-600' : 'text-slate-800'}`}>
+                                    {score}
+                                </span>
+                                <button 
+                                    onClick={() => setScore(score + 1)}
+                                    className="w-8 h-8 rounded-md bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 flex items-center justify-center text-emerald-600 transition-colors"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* View Toggle */}
+                        <button
+                            onClick={() => setViewMode(viewMode === 'map' ? 'strategy' : 'map')}
+                            className={`
+                                flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold transition-all text-sm shadow-sm
+                                ${viewMode === 'map' 
+                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}
+                            `}
+                        >
+                            {viewMode === 'map' ? (
+                                <React.Fragment>
+                                    <BookOpen size={18} />
+                                    <span>攻略</span>
+                                </React.Fragment>
+                            ) : (
+                                <React.Fragment>
+                                    <MapIcon size={18} />
+                                    <span>地圖</span>
+                                </React.Fragment>
+                            )}
+                        </button>
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentHoleId, setCurrentHoleId] = useState(1);
+            const [viewMode, setViewMode] = useState('map'); 
+            const [scores, setScores] = useState(Array(18).fill(0).map((_, i) => HOLE_DATA[i].par));
+
+            const currentHole = HOLE_DATA.find(h => h.id === currentHoleId);
+            const currentScore = scores[currentHoleId - 1];
+
+            const setCurrentScore = (newScore) => {
+                const newScores = [...scores];
+                newScores[currentHoleId - 1] = newScore;
+                setScores(newScores);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-slate-950 font-sans text-gray-800 overflow-hidden flex flex-col">
+                    
+                    <header className="bg-slate-900 text-white shrink-0 h-12 md:h-14 flex items-center justify-between px-4 border-b border-slate-800 z-30">
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center text-white shadow-lg">
+                                <Trophy size={14} className="md:w-4 md:h-4" />
+                            </div>
+                            <h1 className="font-bold text-base md:text-lg tracking-wide truncate">巴拿山球場攻略</h1>
+                        </div>
+                        <button className="p-2 text-slate-400 hover:text-white transition-colors">
+                            <Info size={20} />
+                        </button>
+                    </header>
+
+                    <div className="bg-slate-800 shrink-0 py-2 md:py-3 overflow-x-auto scrollbar-hide border-b border-slate-700 z-20">
+                        <div className="flex px-3 md:px-4 gap-2 min-w-max">
+                            {HOLE_DATA.map((h) => (
+                                <button
+                                    key={h.id}
+                                    onClick={() => {
+                                        setCurrentHoleId(h.id);
+                                        setViewMode('map');
+                                    }}
+                                    className={`
+                                        flex flex-col items-center justify-center w-10 h-12 md:w-12 md:h-14 rounded-lg transition-all duration-200 border
+                                        ${currentHoleId === h.id 
+                                            ? 'bg-amber-400 border-amber-500 text-slate-900 font-bold shadow-lg scale-105' 
+                                            : 'bg-slate-700 border-slate-600 text-slate-400 hover:bg-slate-600'}
+                                    `}
+                                >
+                                    <span className="text-[9px] md:text-[10px] uppercase">Hole</span>
+                                    <span className="text-base md:text-lg leading-none">{h.id}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <main className="flex-1 relative overflow-hidden bg-slate-950 p-2 md:p-6 flex justify-center">
+                        <div className="w-full max-w-lg h-full">
+                            <HoleDetail 
+                                hole={currentHole} 
+                                viewMode={viewMode} 
+                                setViewMode={setViewMode}
+                                score={currentScore}
+                                setScore={setCurrentScore}
+                            />
+                        </div>
+                    </main>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
